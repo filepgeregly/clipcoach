@@ -1,10 +1,12 @@
 from mbientlab.metawear import MetaWear, libmetawear, parse_value
 from mbientlab.metawear.cbindings import *
 
-from time import sleep
+from time import sleep, time
 from threading import Event
 from mbientlab.warble import * 
 import sys
+
+
 
 import platform
 import six
@@ -28,25 +30,34 @@ class State:
     def __init__(self, device):
         self.device = device
         self.samples = 0
-        #self.callback = FnVoid_VoidP_DataP(self.data_handler)
         self.accCallback = FnVoid_VoidP_DataP(self.acc_data_handler)
         self.gyroCallback = FnVoid_VoidP_DataP(self.gyro_data_handler)
 
     # acc callback function
     def acc_data_handler(self, ctx, data):
-        print("ACC: %s -> %s" % (self.device.address, parse_value(data)))
-        self.samples+= 1
+        self.acc_values = parse_value(data)
+        self.log_data()
+        #print(f"{self.device.address};ACC;{timestamp};{values})")
+        #self.samples+= 1
                         
     # gyro callback function
     def gyro_data_handler(self, ctx, data):
-        print("GYRO: %s -> %s" % (self.device.address, parse_value(data)))
-        self.samples+= 1
+       
+       self.gyro_values = parse_value(data)
+       self.log_data()
+       #print(f"{self.device.address};GYRO;{timestamp};{values})")
+       #print("GYRO: %s -> %s" % (self.device.address, parse_value(data)))
+       #self.samples+= 1
         
+    def log_data(self):
+      if self.gyro_values is not None and self.acc_values is not None:
+        timestamp = time()
+        log_entry = f"{self.device.address};{timestamp};{self.samples};ACC:{self.acc_values};GYRO:{self.gyro_values}"
+        print(log_entry)  # Print or store the log entry
+        self.samples += 1
 
+   
 
-    def data_handler(self, ctx, data):
-        print("%s -> %s" % (self.device.address, parse_value(data)))
-        self.samples+= 1
 
 def scan_connect(CCType):
   selection = -1
@@ -97,9 +108,6 @@ def scan_connect(CCType):
 def add_states(address):
   device = MetaWear(address)
   states.append(State(device))
-
- 
-   
    
    
 def start_streaming():
@@ -135,47 +143,6 @@ def start_streaming():
     libmetawear.mbl_mw_gyro_bmi160_enable_rotation_sampling(s.device.board)
     libmetawear.mbl_mw_gyro_bmi160_start(s.device.board)
     
-    
-    
-    
-    
-    
-    
-    # libmetawear.mbl_mw_acc_bmi160_set_odr(s.device.board, AccBmi160Odr._50Hz) # BMI 160 specific call
-    # libmetawear.mbl_mw_acc_bosch_set_range(s.device.board, AccBoschRange._4G)
-    # libmetawear.mbl_mw_acc_write_acceleration_config(s.device.board)
-    #
-    # # config gyro
-    # libmetawear.mbl_mw_gyro_bmi160_set_range(s.device.board, GyroBoschRange._1000dps);
-    # libmetawear.mbl_mw_gyro_bmi160_set_odr(s.device.board, GyroBoschOdr._50Hz);
-    # libmetawear.mbl_mw_gyro_bmi160_write_config(s.device.board);
-    #
-    # # get acc signal and subscribe
-    # #acc = libmetawear.mbl_mw_acc_get_acceleration_data_signal(s.device.board)
-    # #libmetawear.mbl_mw_datasignal_subscribe(acc, None, s.accCallback)
-    #
-    # # get gyro signal and subscribe
-    # gyro = libmetawear.mbl_mw_gyro_bmi160_get_rotation_data_signal(s.device.board)
-    # libmetawear.mbl_mw_datasignal_subscribe(gyro, None, s.gyroCallback)
-    #
-    # # start acc
-    # #libmetawear.mbl_mw_acc_enable_acceleration_sampling(s.device.board)
-    # #libmetawear.mbl_mw_acc_start(s.device.board)
-    #
-    # # start gyro
-    # libmetawear.mbl_mw_gyro_bmi160_enable_rotation_sampling(s.device.board)
-    # libmetawear.mbl_mw_gyro_bmi160_start(s.device.board)
-    #
-
-    #libmetawear.mbl_mw_acc_set_odr(s.device.board, 100.0)
-    #libmetawear.mbl_mw_acc_set_range(s.device.board, 16.0)
-    #libmetawear.mbl_mw_acc_write_acceleration_config(s.device.board)
-    #
-    #signal = libmetawear.mbl_mw_acc_get_acceleration_data_signal(s.device.board)
-    #libmetawear.mbl_mw_datasignal_subscribe(signal, None, s.callback)
-    #
-    #libmetawear.mbl_mw_acc_enable_acceleration_sampling(s.device.board)
-    #libmetawear.mbl_mw_acc_start(s.device.board)     
     print("Streaming started...") 
    
 def stop_streaming():
@@ -190,6 +157,8 @@ def stop_streaming():
         gyro = libmetawear.mbl_mw_gyro_bmi160_get_rotation_data_signal(s.device.board)
         libmetawear.mbl_mw_datasignal_unsubscribe(gyro)
         
+        acc = libmetawear.mbl_mw_acc_get_acceleration_data_signal(s.device.board)        
+        libmetawear.mbl_mw_datasignal_unsubscribe(acc)
         # disconnect
         libmetawear.mbl_mw_debug_disconnect(s.device.board)
 
@@ -206,12 +175,12 @@ def main():
     #CC_sec_address = scan_connect("sec")
     CC_main_address ='D3:2D:3E:01:8E:AF'
     CC_sec_address = 'D4:A6:10:C2:43:C7'
-    print("Main device:" +CC_main_address)
+    print("Main device:" + CC_main_address)
     add_states(CC_main_address) # todo ini-be a mac-ekkel
-    print("Sec device:" +CC_sec_address)
+    print("Sec device:" + CC_sec_address)
     add_states(CC_sec_address) # todo ini-be a mac-ekkel
     start_streaming()    
-    sleep(10)
+    sleep(5)
     stop_streaming()
     
 #TODO  - Nem sikerül az object létrehozás "'write without resp async'"
