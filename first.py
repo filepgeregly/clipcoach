@@ -177,8 +177,8 @@ def main():
     CC_sec_address = 'D4:A6:10:C2:43:C7'
     print("Main device:" + CC_main_address)
     add_states(CC_main_address) # todo ini-be a mac-ekkel
-    print("Sec device:" + CC_sec_address)
-    add_states(CC_sec_address) # todo ini-be a mac-ekkel
+    #print("Sec device:" + CC_sec_address)
+    #add_states(CC_sec_address) # todo ini-be a mac-ekkel
     start_streaming()    
     sleep(5)
     stop_streaming()

@@ -13,6 +13,8 @@ import configparser
 import os
 import platform
 import six
+import keyboard
+from alive_progress import alive_bar
 
 from colorama import Fore, Back, Style
 
@@ -30,9 +32,11 @@ def print_yellow(string):
 def print_green(string):
    print(Fore.GREEN + string)
 
+def print_white(string):
+   print(Fore.WHITE + string)
 
 def print_logo():
-    print_green('')
+    print_white('')
     print(r"  ____ _ _        ____                 _          _    ___ ")
     print(r" / ___| (_)_ __  / ___|___   __ _  ___| |__      / \  |_ _|")
     print(r"| |   | | | '_ \| |   / _ \ / _` |/ __| '_ \    / _ \  | | ")
@@ -248,11 +252,19 @@ def main():
 
     # wait 10 s
     #sleep(10.0)
-    if ask_yes_no("Press ENTER to end streaming!"):
-        None
+    print_green("Press ESC to stop streaming!")
+    
+    with alive_bar(title='Streaming...',monitor =False ,spinner='classic',theme='smooth',elapsed=True, stats=False, bar=None,spinner_length=2) as bar:
+      while True:
+            sleep(1)  # Simulate work being done
+            bar()
+            if keyboard.is_pressed('esc'):
+                print_white("End streaming...")
+                break  # Exit the loop when 'Esc' is pressed    
+        
 
     # reset
-    print("Resetting devices")
+    print("Reseting devices")
     events = []
     for s in states:
         e = Event()
