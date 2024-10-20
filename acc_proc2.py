@@ -56,7 +56,7 @@ class State:
         # Create or open the file in append mode
         self.file_name = 'clipcoach_' + datetime.now().strftime("%Y%m%d_%H%M%S") + '_' + self.device.address.replace(':','') +'.csv'
         with open(self.file_name, mode='w', newline='') as file:
-            writer = csv.writer(file, delimiter=';')
+            writer = csv.writer(file, delimiter=',')
             writer.writerow(['Timestamp', 'Address', 'ACC_X', 'ACC_Y', 'ACC_Z', 'GYRO_X', 'GYRO_Y', 'GYRO_Z'])
 
     # download data callback fxn
@@ -69,7 +69,7 @@ class State:
          device_type = 'sec'
         
         with open(self.file_name, mode='a', newline='') as file:
-                writer = csv.writer(file, delimiter=';')
+                writer = csv.writer(file, delimiter=',')
                 writer.writerow([timestamp, device_type, values[0].x, values[0].y, values[0].z, values[1].x, values[1].y, values[1].z])
          
         
