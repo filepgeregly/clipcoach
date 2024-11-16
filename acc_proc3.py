@@ -60,7 +60,7 @@ class State:
             if self.device.address == CC_main: 
              writer.writerow(['timestamp','acc_x', 'acc_y', 'acc_z', 'gyro_x', 'gyro_y', 'gyro_z'])
             else:
-             writer.writerow(['timestamp','acc_x'])
+             writer.writerow(['timestamp','acc_x','acc_y', 'acc_z'])
 
     # download data callback fxn
     def data_handler(self, ctx, data):
@@ -76,7 +76,7 @@ class State:
                 if device_type =='main':
                  writer.writerow([timestamp, values[0].x, values[0].y, values[0].z, values[1].x, values[1].y, values[1].z])
                 else: 
-                 writer.writerow([timestamp, values[0].x])
+                 writer.writerow([timestamp, values[0].x, values[0].y, values[0].z])
          
         
     # setup
@@ -110,42 +110,51 @@ class State:
         acc = libmetawear.mbl_mw_acc_get_acceleration_data_signal(self.device.board)
         gyro = libmetawear.mbl_mw_gyro_bmi160_get_rotation_data_signal(self.device.board)
         
+        if self.device.address == CC_main:
+         device_type = 'main'
+        else:
+         device_type = 'sec'
         
-        
-        libmetawear.mbl_mw_dataprocessor_highpass_create(acc, 8, None, fn_wrapper)
-        e.wait()
-        hp_acc = self.processor
-        e.clear()
-        
-        
-        libmetawear.mbl_mw_dataprocessor_average_create(hp_acc, 8, None, fn_wrapper)
-        e.wait()
-        avg_hp_acc = self.processor
-        e.clear()
-        
-        
-        libmetawear.mbl_mw_dataprocessor_highpass_create(gyro, 8, None, fn_wrapper)
-        e.wait()
-        hp_gyro = self.processor
-        e.clear()
-        
-        
-        libmetawear.mbl_mw_dataprocessor_average_create(hp_gyro, 8, None, fn_wrapper)
-        e.wait()
-        avg_hp_gyro = self.processor
-        e.clear()
-        
+        if device_type == 'main':
+            libmetawear.mbl_mw_dataprocessor_highpass_create(acc, 8, None, fn_wrapper)
+            e.wait()
+            hp_acc = self.processor
+            e.clear()
+            
+            
+            libmetawear.mbl_mw_dataprocessor_average_create(hp_acc, 8, None, fn_wrapper)
+            e.wait()
+            avg_hp_acc = self.processor
+            e.clear()
+            
+            
+            libmetawear.mbl_mw_dataprocessor_highpass_create(gyro, 8, None, fn_wrapper)
+            e.wait()
+            hp_gyro = self.processor
+            e.clear()
+            
+            
+            libmetawear.mbl_mw_dataprocessor_average_create(hp_gyro, 8, None, fn_wrapper)
+            e.wait()
+            avg_hp_gyro = self.processor
+            e.clear()
+            
+            # create signals variable
+            signals = (c_void_p * 1)()
+            signals[0] = avg_hp_gyro
+            # create acc + gyro signal fuser
+            libmetawear.mbl_mw_dataprocessor_fuser_create(avg_hp_acc, signals, 1, None, fn_wrapper)
+            # wait for fuser to be created
+            e.wait()
+        else:
+            signals = (c_void_p * 1)()
+            signals[0] = gyro
+            # create acc + gyro signal fuser
+            libmetawear.mbl_mw_dataprocessor_fuser_create(acc, signals, 1, None, fn_wrapper)
+            # wait for fuser to be created
+            e.wait()        
        
-        
-        
-        # create signals variable
-        signals = (c_void_p * 1)()
-        signals[0] = avg_hp_gyro
-        # create acc + gyro signal fuser
-        libmetawear.mbl_mw_dataprocessor_fuser_create(avg_hp_acc, signals, 1, None, fn_wrapper)
-        # wait for fuser to be created
-        e.wait()
-        # subscribe to the fused signal
+       # subscribe to the fused signal
         libmetawear.mbl_mw_datasignal_subscribe(self.processor, None, self.callback)
     # start
     def start(self):
