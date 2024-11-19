@@ -33,6 +33,11 @@ CC_sec = None
 
 window_size = 30
 step_size = 5
+#ai_model = 'model/clipcoach_first.joblib'
+ai_model = 'model/clipcoach_2.joblib'
+
+
+
 buffer = []  # Egy ideiglenes puffer az ablak méretének feltöltésére
 result_df = pd.DataFrame() 
 cols = ['acc_x', 'acc_y', 'acc_z', 'gyro_x', 'gyro_y', 'gyro_z']
@@ -117,10 +122,11 @@ def check_movement(df_in):
     
     prediction = model.predict(scaled_data,verbose=0) #.argmax(axis=1)
     
-    print(f'{prediction[:,0]},{prediction[:,1]},{prediction[:,2]}')
-    prediction = prediction.argmax(axis=1)
-    if prediction != 1:
-       sound(prediction)
+    #print(f'{prediction[:,0]},{prediction[:,1]},{prediction[:,2]}')
+    pred = prediction.argmax(axis=1)
+    if pred != 1:
+       print(f'{prediction[:,0]},{prediction[:,1]},{prediction[:,2]}')
+       sound(pred)
     
    
 
@@ -355,7 +361,7 @@ def main():
     CC_sec = None
     print_green('Loading LSTM model...')
     global model
-    model = joblib.load('clipcoach_first.joblib') 
+    model = joblib.load(ai_model) 
     init_streaming_data()
     
     global cat
