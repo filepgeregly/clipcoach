@@ -69,11 +69,11 @@ def sound(p):
         if p == 2:
          print('StandUP')
          #winsound.Beep(1000, 500)
-         playsound('dog.mp3')
+         playsound.playsound(r'dog.mp3')
         if p == 0:
          print('SitDOWN')
          #winsound.Beep(1000, 500)
-         playsound('cat.mp3')
+         playsound.playsound(r'cat.wav')
         prev_status = p
 
 def init_streaming_data():
@@ -118,10 +118,9 @@ def check_movement(df_in):
     prediction = model.predict(scaled_data,verbose=0) #.argmax(axis=1)
     
     print(f'{prediction[:,0]},{prediction[:,1]},{prediction[:,2]}')
-    if prediction.max > 0.8:
-        prediction = prediction.argmax(axis=1)
-        if prediction != 1:
-            sound(prediction)
+    prediction = prediction.argmax(axis=1)
+    if prediction != 1:
+       sound(prediction)
     
    
 
