@@ -34,7 +34,7 @@ CC_sec = None
 window_size = 30
 step_size = 5
 #ai_model = 'model/clipcoach_first.joblib'
-ai_model = 'model/clipcoach_2.joblib'
+ai_model = 'model/clipcoach_3.joblib'
 
 
 
