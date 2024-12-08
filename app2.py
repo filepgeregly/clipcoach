@@ -6,7 +6,7 @@ from mbientlab.warble import BleScanner
 from time import sleep, time
 from datetime import datetime
 from threading import Event
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler,RobustScaler
 #from sys import argv
 import sys 
 import csv
@@ -33,15 +33,16 @@ CC_main = None
 CC_sec = None
 
 window_size = 50
-step_size = 10
+step_size = 15
 #ai_model = 'model/clipcoach_first.joblib'
-ai_model = 'model/clipcoach_8_1D_Conv.joblib'
+ai_model = 'model/clipcoach_10_all.joblib'
 
 
 
 buffer = []  # Egy ideiglenes puffer az ablak méretének feltöltésére
 result_df = pd.DataFrame() 
 cols = ['acc_x', 'acc_y', 'acc_z', 'gyro_x', 'gyro_y', 'gyro_z']
+status =('Sitting','StandingUP', 'Standing', 'SittingDown')
 prev_status = 0
 
 
@@ -102,12 +103,14 @@ def check_movement(df_in):
     df = pd.DataFrame(df_in,columns = cols) 
     
     #print(df.head())
-    scaler = StandardScaler()
+    #scaler = StandardScaler()
+    scaler = RobustScaler()
     #df[:, acc_columns_indices] = scaler.fit_transform(df[:, acc_columns_indices])
     #df.loc[:, acc_columns] = scaler.fit_transform(df.loc[:, acc_columns])
     df[acc_columns] = scaler.fit_transform(df[acc_columns])
 
-    gyro_scaler = StandardScaler()
+    #gyro_scaler = StandardScaler()
+    gyro_scaler = RobustScaler()
     #df[:, gyro_columns_indices] = scaler.fit_transform(df[:, gyro_columns_indices])
     #df.loc[:,gyro_columns] = gyro_scaler.fit_transform(df.loc[:,gyro_columns])
     df[gyro_columns] = gyro_scaler.fit_transform(df[gyro_columns])
@@ -122,22 +125,28 @@ def check_movement(df_in):
     #df_test = pd.DataFrame(scaled_data, columns=(acc_columns + gyro_columns))
     
     prediction = model.predict(scaled_data,verbose=0) #.argmax(axis=1)
-    if prediction.max() > 0.7:
+    if prediction.max() > 0.6:
         winner = model.predict(scaled_data,verbose=0).argmax(axis=1)
-        if winner ==0:
-         print(Fore.YELLOW +f'{prediction[:,0]}'+ Style.RESET_ALL + Fore.GREEN + f',{prediction[:,1]},{prediction[:,2]}')
-        else:
+        print(f'{winner}')
+        #print(Fore.YELLOW + f'{status(winner)}({prediction.max()})' + Style.RESET_ALL )
+        #+ f'{status[prediction]}({prediction.max()})' + Style.RESET_ALL)
+        
+        
+        
+        #if winner ==0:
+         #print(Fore.YELLOW +f'{prediction[:,0]}'+ Style.RESET_ALL + Fore.GREEN + f',{prediction[:,1]},{prediction[:,2]}')
+        #else:
           #if winner ==1:
           #   print(Fore.GREEN +f'{prediction[:,0]}'+ Fore.YELLOW + f',{prediction[:,1]}' + Fore.GREEN + f',{prediction[:,2]}')
           #else:
-            if winner == 2:
-             print(Fore.GREEN +f'{prediction[:,0]} ,{prediction[:,1]}' + Fore.YELLOW + f',{prediction[:,2]}'+ Style.RESET_ALL )
+        #    if winner == 2:
+        #     print(Fore.GREEN +f'{prediction[:,0]} ,{prediction[:,1]}' + Fore.YELLOW + f',{prediction[:,2]}'+ Style.RESET_ALL )
             
         #print(f'{prediction[:,0]},{prediction[:,1]},{prediction[:,2]}')
-        pred = prediction.argmax(axis=1)
-        if pred != 1:
+        #pred = prediction.argmax(axis=1)
+        #if pred != 1:
            #print(f'{prediction[:,0]},{prediction[:,1]},{prediction[:,2]}')
-           sound(pred)
+           #sound(pred)
     
    
 
@@ -370,7 +379,7 @@ def main():
     global CC_sec
     CC_main = None
     CC_sec = None
-    print_green('Loading LSTM model...')
+    print_green('Loading AI model...')
     global model
     model = joblib.load(ai_model) 
     init_streaming_data()
